@@ -17,6 +17,11 @@ export class Space {
         this.renderer = this.initRender();
     }
 
+    /**
+     * 初始化场景,增加光源
+     * @param width  宽度
+     * @param height 高度
+     */
     initScene(width: number, height: number) {
         const scene = new THREE.Scene()
         const plane = new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshLambertMaterial({color: 0xffffff}))
@@ -43,6 +48,11 @@ export class Space {
         return scene
     }
 
+    /**
+     * 初始化相机
+     * @param width 宽度
+     * @param height 高度
+     */
     initCamera(width: number, height: number) {
         const camera = new THREE.PerspectiveCamera(70)
         camera.near = 0.01
@@ -51,6 +61,9 @@ export class Space {
         return camera
     }
 
+    /**
+     * 初始化渲染器
+     */
     initRender() {
         const renderer = new THREE.WebGLRenderer({antialias: true, alpha: false})
         renderer.setPixelRatio(window.devicePixelRatio)
@@ -64,35 +77,50 @@ export class Space {
         return renderer
     }
 
+    /**
+     * 渲染到指定的元素上
+     * @param element 元素
+     */
     render(element: HTMLElement) {
         this.camera.aspect = element.clientWidth / element.clientHeight
         this.renderer.setSize(element.clientWidth, element.clientHeight)
         element.appendChild(this.renderer.domElement)
     }
 
-
+    /**
+     * 添加模型
+     * @param url 模型地址
+     * @param scale 缩放
+     * @param position 位置
+     */
     async addModel(url: string, scale = 1, position: { x: number, y: number, z: number } = {x: 0, y: 0, z: 0}) {
         const {scene, animations} = await modelLoader.loadAsync(url);
-        console.log(animations)
         scene.scale.set(scale, scale, scale);``
         scene.position.set(position.x, position.y, position.z);
         scene.castShadow = true;
         scene.receiveShadow = true;
+        //让模型的每个部分都可以投射阴影
         scene.traverse((child) => {
             if (child instanceof THREE.Mesh) {
-                console.log(child)
                 child.castShadow = true;
                 child.receiveShadow = true;
+                // 可以改变材质
                 // child.material = new THREE.MeshLambertMaterial({color: 0xff00ff})
             }
         })
         this.scene.add(scene);
         if (animations.length && animations.length > 0) {
-            // animations[0].tracks = animations[0].tracks.filter((track) => track.name.endsWith("scale"))
+            // 这里只播放第一个动画
             this.randomModelAnimation(scene, animations[0])
         }
         return scene
     }
+
+    /**
+     * 随机播放模型动画，这里的demo里面是很多灯的动画，每次随机播放3个灯的动画之一
+     * @param scene 模型
+     * @param clip 动画
+     */
     randomModelAnimation(scene: THREE.Group<THREE.Object3DEventMap>, clip: AnimationClip) {
         const allTracks = clip.tracks.filter((track) => !track.name.startsWith("white"))
         // const allTracks = clip.tracks;
